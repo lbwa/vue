@@ -311,6 +311,8 @@ export function stateMixin (Vue: Class<Component>) {
   // flow somehow has problems with directly declared definition object
   // when using Object.defineProperty, so we have to procedurally build up
   // the object here.
+
+  // 定义 Vue 实例上 data 的属性描述符,
   const dataDef = {}
   dataDef.get = function () { return this._data }
   const propsDef = {}
@@ -327,12 +329,16 @@ export function stateMixin (Vue: Class<Component>) {
       warn(`$props is readonly.`, this)
     }
   }
+
+  // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
+  // 在 Vue 原型上定义 $data 属性
   Object.defineProperty(Vue.prototype, '$data', dataDef)
   Object.defineProperty(Vue.prototype, '$props', propsDef)
 
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
 
+  // 定义 vue 实例的 $watch
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,

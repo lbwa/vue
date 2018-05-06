@@ -84,11 +84,22 @@ const builds = {
   },
   // Runtime+compiler development build (Browser)
   'web-full-dev': {
+    // 入口文件
     entry: resolve('web/entry-runtime-with-compiler.js'),
+
+    // 输出文件
     dest: resolve('dist/vue.js'),
+
+    // 格式
     format: 'umd',
+
+    // 环境
     env: 'development',
+
+    // 别名
     alias: { he: './entity-decoder' },
+
+    // 作者信息
     banner
   },
   // Runtime+compiler production build  (Browser)
