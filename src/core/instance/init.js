@@ -49,9 +49,11 @@ export function initMixin (Vue: Class<Component>) {
       // internal component options needs special treatment.
       initInternalComponent(vm, options)
     } else {
-      // 将 options 合并
+      // 将 options 合并，主要目的是合并了 parent 和 child 的 options 对象
       // mergeOptions(parent, child, vm) 返回一个新的 options 对象
       vm.$options = mergeOptions(
+        // 传入 Vue 实例的 constructor，即 Vue 构造函数（core/instance/index.js）
+        // 返回传入构造函数的参数对象，即 options 对象
         resolveConstructorOptions(vm.constructor),
         options || {},
         vm
@@ -59,6 +61,8 @@ export function initMixin (Vue: Class<Component>) {
     }
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
+      // 非生产环境时，
+      // vm._renderProxy = nre Proxy(vm, handles)
       initProxy(vm)
     } else {
       vm._renderProxy = vm
@@ -85,7 +89,18 @@ export function initMixin (Vue: Class<Component>) {
      * vm._hasHookEvent = false
      */
     initEvents(vm)
+
+    /**
+     * vm._vnode = null // the root of the child tree
+     * vm._staticTrees = null // v-once cached trees
+     * vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
+     * vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)
+     * vm.$attrs = {...}
+     * vm.$listeners = {...}
+     */
     initRender(vm)
+
+    // 调用生命周期函数 beforeCreate
     callHook(vm, 'beforeCreate')
 
     // inject 选项，需与其他祖先组件的 provide 选项一起使用

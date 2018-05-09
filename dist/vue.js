@@ -144,6 +144,7 @@ function remove (arr, item) {
 
 /**
  * Check whether the object has the property.
+ * 检测对象本身是否具有某属性，特别地，不检测原型链上的属性
  */
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 function hasOwn (obj, key) {
@@ -1104,12 +1105,6 @@ function dependArray (value) {
 
 /*  */
 
-/**
- * Option overwriting strategies are functions that handle
- * how to merge a parent option value and a child option
- * value into the final value.
- */
-// 合并 options 对象的合并策略，默认值为 Object.create(null)
 var strats = config.optionMergeStrategies;
 
 /**
@@ -1124,6 +1119,7 @@ var strats = config.optionMergeStrategies;
         'creation with the `new` keyword.'
       );
     }
+    // 执行默认合并策略
     return defaultStrat(parent, child)
   };
 }
@@ -1139,6 +1135,8 @@ function mergeData (to, from) {
     key = keys[i];
     toVal = to[key];
     fromVal = from[key];
+
+    // 检测对象本身是否具有某属性，特别地，不检测原型链上的属性
     if (!hasOwn(to, key)) {
       set(to, key, fromVal);
     } else if (isPlainObject(toVal) && isPlainObject(fromVal)) {
@@ -1319,10 +1317,11 @@ strats.computed = function (
   return ret
 };
 strats.provide = mergeDataOrFn;
-console.log('Object strats(used to merge options) :', strats);
+console.log('Object strats(used to merge options, from core/util/options) :', strats);
 
 /**
  * Default strategy.
+ * 默认合并策略
  */
 var defaultStrat = function (parentVal, childVal) {
   return childVal === undefined
@@ -1460,11 +1459,17 @@ function mergeOptions (
   }
 
   if (typeof child === 'function') {
+    // 提取子 options 对象
     child = child.options;
   }
 
+  // 标准化传入 options 中的 props
   normalizeProps(child, vm);
+
+  // 标准化 inject 选项（组件间传递信息的高级用法，不具有响应式特点，与 provide 搭配使用）
   normalizeInject(child, vm);
+
+  // 标准化 directive 选项，即自定义指令
   normalizeDirectives(child);
   var extendsFrom = child.extends;
   if (extendsFrom) {
@@ -1475,18 +1480,26 @@ function mergeOptions (
       parent = mergeOptions(parent, child.mixins[i], vm);
     }
   }
+
+  // 初始化 options 对象
   var options = {};
   var key;
   for (key in parent) {
     mergeField(key);
   }
   for (key in child) {
+    // 检测对象本身是否具有某属性，特别地，不检测原型链上的属性
     if (!hasOwn(parent, key)) {
+      // 细节：在枚举子 options 时，只合并父 options 对象中不存在的项，来提高合并效率
       mergeField(key);
     }
   }
   function mergeField (key) {
+    // 在 strats 对象中存在 key 名策略时，调用它，否则调用默认合并策略
     var strat = strats[key] || defaultStrat;
+
+    // 调用合并策略（strats 对象）中的某一策略（strat 函数）来合并选项（即给传入的
+    // Vue 构造函数的 options 对象（函数的参数）重写 key 名的属性）
     options[key] = strat(parent[key], child[key], vm, key);
   }
   return options
@@ -1868,7 +1881,6 @@ var mark;
 var measure;
 
 {
-
   // window.performance 访问某些函数来测量网页和 web 应用程序的性能
   var perf = inBrowser && window.performance;
   /* istanbul ignore if */
@@ -3320,6 +3332,8 @@ function proxy (target, sourceKey, key) {
 }
 
 function initState (vm) {
+  console.log('vm :', vm);
+  debugger
   vm._watchers = [];
   var opts = vm.$options;
   if (opts.props) { initProps(vm, opts.props); }
@@ -3388,6 +3402,12 @@ function initData (vm) {
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {};
+  // 当组件中的 data 选项不是一个函数时，将抛出警告
+  /**
+   * export function isPlainObject (obj: any): boolean {
+   *   return _toString.call(obj) === '[object Object]'
+   * }
+   */
   if (!isPlainObject(data)) {
     data = {};
     "development" !== 'production' && warn(
@@ -4485,6 +4505,7 @@ function initRender (vm) {
   vm.$slots = resolveSlots(options._renderChildren, renderContext);
   vm.$scopedSlots = emptyObject;
   // bind the createElement fn to this instance
+  // 绑定 createElement 函数到实例上
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
   // internal version is used by render functions compiled from templates
@@ -4584,7 +4605,6 @@ var uid$3 = 0;
 function initMixin (Vue) {
   // options 即为实例化 Vue 时传入的参数对象
   Vue.prototype._init = function (options) {
-
     // vm ，即调用 new Vue() 时 Vue 构造函数中的 this，即 Vue 实例（因为 ./index 中
     // 有 this._init(options)）
     var vm = this;
@@ -4618,9 +4638,11 @@ function initMixin (Vue) {
       // internal component options needs special treatment.
       initInternalComponent(vm, options);
     } else {
-      // 将 options 合并
+      // 将 options 合并，主要目的是合并了 parent 和 child 的 options 对象
       // mergeOptions(parent, child, vm) 返回一个新的 options 对象
       vm.$options = mergeOptions(
+        // 传入 Vue 实例的 constructor，即 Vue 构造函数（core/instance/index.js）
+        // 返回传入构造函数的参数对象，即 options 对象
         resolveConstructorOptions(vm.constructor),
         options || {},
         vm
@@ -4628,6 +4650,8 @@ function initMixin (Vue) {
     }
     /* istanbul ignore else */
     {
+      // 非生产环境时，
+      // vm._renderProxy = nre Proxy(vm, handles)
       initProxy(vm);
     }
     // expose real self
@@ -4652,7 +4676,18 @@ function initMixin (Vue) {
      * vm._hasHookEvent = false
      */
     initEvents(vm);
+
+    /**
+     * vm._vnode = null // the root of the child tree
+     * vm._staticTrees = null // v-once cached trees
+     * vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
+     * vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)
+     * vm.$attrs = {...}
+     * vm.$listeners = {...}
+     */
     initRender(vm);
+
+    // 调用生命周期函数 beforeCreate
     callHook(vm, 'beforeCreate');
 
     // inject 选项，需与其他祖先组件的 provide 选项一起使用

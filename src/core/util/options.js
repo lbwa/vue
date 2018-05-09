@@ -12,6 +12,7 @@ import {
 
 import {
   extend,
+  // 检测对象本身是否具有某属性，特别地，不检测原型链上的属性
   hasOwn,
   camelize,
   toRawType,
@@ -40,6 +41,7 @@ if (process.env.NODE_ENV !== 'production') {
         'creation with the `new` keyword.'
       )
     }
+    // 执行默认合并策略
     return defaultStrat(parent, child)
   }
 }
@@ -55,6 +57,8 @@ function mergeData (to: Object, from: ?Object): Object {
     key = keys[i]
     toVal = to[key]
     fromVal = from[key]
+
+    // 检测对象本身是否具有某属性，特别地，不检测原型链上的属性
     if (!hasOwn(to, key)) {
       set(to, key, fromVal)
     } else if (isPlainObject(toVal) && isPlainObject(fromVal)) {
@@ -235,10 +239,11 @@ strats.computed = function (
   return ret
 }
 strats.provide = mergeDataOrFn
-console.log('Object strats(used to merge options) :', strats)
+console.log('Object strats(used to merge options, from core/util/options) :', strats)
 
 /**
  * Default strategy.
+ * 默认合并策略
  */
 const defaultStrat = function (parentVal: any, childVal: any): any {
   return childVal === undefined
@@ -376,11 +381,17 @@ export function mergeOptions (
   }
 
   if (typeof child === 'function') {
+    // 提取子 options 对象
     child = child.options
   }
 
+  // 标准化传入 options 中的 props
   normalizeProps(child, vm)
+
+  // 标准化 inject 选项（组件间传递信息的高级用法，不具有响应式特点，与 provide 搭配使用）
   normalizeInject(child, vm)
+
+  // 标准化 directive 选项，即自定义指令
   normalizeDirectives(child)
   const extendsFrom = child.extends
   if (extendsFrom) {
@@ -391,18 +402,26 @@ export function mergeOptions (
       parent = mergeOptions(parent, child.mixins[i], vm)
     }
   }
+
+  // 初始化 options 对象
   const options = {}
   let key
   for (key in parent) {
     mergeField(key)
   }
   for (key in child) {
+    // 检测对象本身是否具有某属性，特别地，不检测原型链上的属性
     if (!hasOwn(parent, key)) {
+      // 细节：在枚举子 options 时，只合并父 options 对象中不存在的项，来提高合并效率
       mergeField(key)
     }
   }
   function mergeField (key) {
+    // 在 strats 对象中存在 key 名策略时，调用它，否则调用默认合并策略
     const strat = strats[key] || defaultStrat
+
+    // 调用合并策略（strats 对象）中的某一策略（strat 函数）来合并选项（即给传入的
+    // Vue 构造函数的 options 对象（函数的参数）重写 key 名的属性）
     options[key] = strat(parent[key], child[key], vm, key)
   }
   return options

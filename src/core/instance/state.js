@@ -46,6 +46,8 @@ export function proxy (target: Object, sourceKey: string, key: string) {
 }
 
 export function initState (vm: Component) {
+  console.log('vm :', vm)
+  debugger
   vm._watchers = []
   const opts = vm.$options
   if (opts.props) initProps(vm, opts.props)
@@ -114,6 +116,12 @@ function initData (vm: Component) {
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
+  // 当组件中的 data 选项不是一个函数时，将抛出警告
+  /**
+   * export function isPlainObject (obj: any): boolean {
+   *   return _toString.call(obj) === '[object Object]'
+   * }
+   */
   if (!isPlainObject(data)) {
     data = {}
     process.env.NODE_ENV !== 'production' && warn(

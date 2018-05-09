@@ -133,6 +133,7 @@ export function remove (arr: Array<any>, item: any): Array<any> | void {
 
 /**
  * Check whether the object has the property.
+ * 检测对象本身是否具有某属性，特别地，不检测原型链上的属性
  */
 const hasOwnProperty = Object.prototype.hasOwnProperty
 export function hasOwn (obj: Object | Array<*>, key: string): boolean {
