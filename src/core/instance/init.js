@@ -14,28 +14,43 @@ let uid = 0
 
 // 向 Vue 原型上挂载 _init 方法
 export function initMixin (Vue: Class<Component>) {
+  // options 即为实例化 Vue 时传入的参数对象
   Vue.prototype._init = function (options?: Object) {
+    // vm ，即调用 new Vue() 时 Vue 构造函数中的 this，即 Vue 实例（因为 ./index 中
+    // 有 this._init(options)）
     const vm: Component = this
+
     // a uid
     vm._uid = uid++
 
+    // web performance API 用于测量杨业和 web 应用程序的性能
     let startTag, endTag
     /* istanbul ignore if */
+    // 非生产环境 && 开启记录 perf && 在浏览器环境中（因为存在 window.performance）
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
       startTag = `vue-perf-start:${vm._uid}`
       endTag = `vue-perf-end:${vm._uid}`
+
+      // src/core/util/perf.js
+      // mark = tag => (inBrowser && window.performance).mark(tag)
       mark(startTag)
     }
 
     // a flag to avoid this being observed
     vm._isVue = true
+
     // merge options
+    // options 参数是 new Vue() 传入的参数对象
     if (options && options._isComponent) {
       // optimize internal component instantiation
+      // 优化内部组件实例化过程
       // since dynamic options merging is pretty slow, and none of the
+      // 因为动态选项合并实在太慢了，所有的内部组件选项都不需要特殊对待
       // internal component options needs special treatment.
       initInternalComponent(vm, options)
     } else {
+      // 将 options 合并
+      // mergeOptions(parent, child, vm) 返回一个新的 options 对象
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -50,12 +65,34 @@ export function initMixin (Vue: Class<Component>) {
     }
     // expose real self
     vm._self = vm
+
+    /**
+     * vm.$parent = parent
+     * vm.$root = parent ? parent.$root : vm
+     * vm.$children = []
+     * vm.$refs = {}
+     * vm._watcher = null
+     * vm._inactive = null
+     * vm._directInactive = false
+     * vm._isMounted = false
+     * vm._isDestroyed = false
+     * vm._isBeingDestroyed = false
+     */
     initLifecycle(vm)
+
+    /**
+     * vm._events = Object.create(null) // 没有 __proto__ 的对象
+     * vm._hasHookEvent = false
+     */
     initEvents(vm)
     initRender(vm)
     callHook(vm, 'beforeCreate')
+
+    // inject 选项，需与其他祖先组件的 provide 选项一起使用
     initInjections(vm) // resolve injections before data/props
     initState(vm)
+
+    // provide 选项，需与其他后代组件的 inject 选项一起使用
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
 
@@ -73,6 +110,7 @@ export function initMixin (Vue: Class<Component>) {
 }
 
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
+  // Object.create(A) 以对象A为对象原型创建一个新的对象
   const opts = vm.$options = Object.create(vm.constructor.options)
   // doing this because it's faster than dynamic enumeration.
   const parentVnode = options._parentVnode

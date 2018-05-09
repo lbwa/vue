@@ -44,6 +44,7 @@ export function initGlobalAPI (Vue: GlobalAPI) {
   Vue.delete = del
   Vue.nextTick = nextTick
 
+  // Object.create(null) 创建一个没有隐式原型的对象（没有__proto__）
   Vue.options = Object.create(null)
   ASSET_TYPES.forEach(type => {
     Vue.options[type + 's'] = Object.create(null)
@@ -53,10 +54,36 @@ export function initGlobalAPI (Vue: GlobalAPI) {
   // components with in Weex's multi-instance scenarios.
   Vue.options._base = Vue
 
+  /**
+   * 将第一参数中所有属性及其值复制给第二参数（通过 for in 实现。shared/util）
+   * Vue.options.components.KeepAlive = { name: 'keep-alive' ...}
+   */
   extend(Vue.options.components, builtInComponents)
 
+  // Vue.use = function (plugin) {}
   initUse(Vue)
+
+  // Vue.mixin = function (Vue) {}
   initMixin(Vue)
+
+  /**
+   * Vue.cid = 0
+   * let cid = 1
+   * Vue.extend = function (extendOptions) {}
+   */
   initExtend(Vue)
+
+  /**
+   * ASSET_TYPES = [
+   *    'component',
+   *    'directive',
+   *    'filter'
+   * ]
+   * 调用 ASSET_TYPES.forEach(),
+   * 其中操作为：
+   * Vue.component = function () {}
+   * Vue.directive = function () {}
+   * Vue.filter = function () {}
+   */
   initAssetRegisters(Vue)
 }

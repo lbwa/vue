@@ -8,6 +8,7 @@ import {
 
 import { LIFECYCLE_HOOKS } from 'shared/constants'
 
+// 用于 flow.js 类型验证
 export type Config = {
   // user
   optionMergeStrategies: { [key: string]: Function };

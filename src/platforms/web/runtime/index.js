@@ -27,10 +27,16 @@ Vue.config.getTagNamespace = getTagNamespace
 Vue.config.isUnknownElement = isUnknownElement
 
 // install platform runtime directives & components
+
+/**
+ * Vue.options.directives = { model: ..., show: ... }
+ * Vue.options.components = { KeepAlive: ..., Transition: ..., TransitionGroup: ... } 其中 KeepAlive 属性是在 core/index.js 的 initGlobalAPI(Vue) 时添加
+ */
 extend(Vue.options.directives, platformDirectives)
 extend(Vue.options.components, platformComponents)
 
 // install platform patch function
+// patch 是虚拟 DOM 所用到的方法
 Vue.prototype.__patch__ = inBrowser ? patch : noop
 
 // public mount method

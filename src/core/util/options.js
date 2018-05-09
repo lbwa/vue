@@ -25,10 +25,12 @@ import {
  * how to merge a parent option value and a child option
  * value into the final value.
  */
+// 合并 options 对象的合并策略，默认值为 Object.create(null)
 const strats = config.optionMergeStrategies
 
 /**
  * Options with restrictions
+ * 选项的限制条件
  */
 if (process.env.NODE_ENV !== 'production') {
   strats.el = strats.propsData = function (parent, child, vm, key) {
@@ -233,6 +235,7 @@ strats.computed = function (
   return ret
 }
 strats.provide = mergeDataOrFn
+console.log('Object strats(used to merge options) :', strats)
 
 /**
  * Default strategy.
@@ -368,6 +371,7 @@ export function mergeOptions (
   vm?: Component
 ): Object {
   if (process.env.NODE_ENV !== 'production') {
+    // 根据用户传入的 options，检查合法性
     checkComponents(child)
   }
 

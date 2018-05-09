@@ -704,9 +704,6 @@ Dep.prototype.notify = function notify () {
   }
 };
 
-// the current target watcher being evaluated.
-// this is globally unique because there could be only one
-// watcher being evaluated at any time.
 Dep.target = null;
 var targetStack = [];
 
@@ -1112,10 +1109,12 @@ function dependArray (value) {
  * how to merge a parent option value and a child option
  * value into the final value.
  */
+// 合并 options 对象的合并策略，默认值为 Object.create(null)
 var strats = config.optionMergeStrategies;
 
 /**
  * Options with restrictions
+ * 选项的限制条件
  */
 {
   strats.el = strats.propsData = function (parent, child, vm, key) {
@@ -1320,6 +1319,7 @@ strats.computed = function (
   return ret
 };
 strats.provide = mergeDataOrFn;
+console.log('Object strats(used to merge options) :', strats);
 
 /**
  * Default strategy.
@@ -1455,6 +1455,7 @@ function mergeOptions (
   vm
 ) {
   {
+    // 根据用户传入的 options，检查合法性
     checkComponents(child);
   }
 
@@ -1867,6 +1868,8 @@ var mark;
 var measure;
 
 {
+
+  // window.performance 访问某些函数来测量网页和 web 应用程序的性能
   var perf = inBrowser && window.performance;
   /* istanbul ignore if */
   if (
@@ -2175,18 +2178,6 @@ function checkProp (
 
 /*  */
 
-// The template compiler attempts to minimize the need for normalization by
-// statically analyzing the template at compile time.
-//
-// For plain HTML markup, normalization can be completely skipped because the
-// generated render function is guaranteed to return Array<VNode>. There are
-// two cases where extra normalization is needed:
-
-// 1. When the children contains components - because a functional component
-// may return an Array instead of a single root. In this case, just a simple
-// normalization is needed - if any child is an Array, we flatten the whole
-// thing with Array.prototype.concat. It is guaranteed to be only 1-level deep
-// because functional components already normalize their own children.
 function simpleNormalizeChildren (children) {
   for (var i = 0; i < children.length; i++) {
     if (Array.isArray(children[i])) {
@@ -2618,6 +2609,7 @@ var activeInstance = null;
 var isUpdatingChildComponent = false;
 
 function initLifecycle (vm) {
+  // 传入 vue 实例 vm
   var options = vm.$options;
 
   // locate first non-abstract parent
@@ -3593,6 +3585,8 @@ function stateMixin (Vue) {
   // flow somehow has problems with directly declared definition object
   // when using Object.defineProperty, so we have to procedurally build up
   // the object here.
+
+  // 定义 Vue 实例上 data 的属性描述符,
   var dataDef = {};
   dataDef.get = function () { return this._data };
   var propsDef = {};
@@ -3609,12 +3603,16 @@ function stateMixin (Vue) {
       warn("$props is readonly.", this);
     };
   }
+
+  // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
+  // 在 Vue 原型上定义 $data 属性
   Object.defineProperty(Vue.prototype, '$data', dataDef);
   Object.defineProperty(Vue.prototype, '$props', propsDef);
 
   Vue.prototype.$set = set;
   Vue.prototype.$delete = del;
 
+  // 定义 vue 实例的 $watch
   Vue.prototype.$watch = function (
     expOrFn,
     cb,
@@ -3707,9 +3705,6 @@ function resolveInject (inject, vm) {
 
 /*  */
 
-/**
- * Runtime helper for rendering v-for lists.
- */
 function renderList (
   val,
   render
@@ -3741,9 +3736,6 @@ function renderList (
 
 /*  */
 
-/**
- * Runtime helper for rendering <slot>
- */
 function renderSlot (
   name,
   fallback,
@@ -3790,9 +3782,6 @@ function renderSlot (
 
 /*  */
 
-/**
- * Runtime helper for resolving filters
- */
 function resolveFilter (id) {
   return resolveAsset(this.$options, 'filters', id, true) || identity
 }
@@ -3831,9 +3820,6 @@ function checkKeyCodes (
 
 /*  */
 
-/**
- * Runtime helper for merging v-bind="object" into a VNode's data.
- */
 function bindObjectProps (
   data,
   tag,
@@ -4121,13 +4107,10 @@ function mergeProps (to, from) {
 
 // https://github.com/Hanks10100/weex-native-directive/tree/master/component
 
-// listening on native callback
-
 /*  */
 
 /*  */
 
-// inline hooks to be invoked on component VNodes during patch
 var componentVNodeHooks = {
   init: function init (vnode, hydrating) {
     if (
@@ -4597,29 +4580,46 @@ function renderMixin (Vue) {
 
 var uid$3 = 0;
 
+// 向 Vue 原型上挂载 _init 方法
 function initMixin (Vue) {
+  // options 即为实例化 Vue 时传入的参数对象
   Vue.prototype._init = function (options) {
+
+    // vm ，即调用 new Vue() 时 Vue 构造函数中的 this，即 Vue 实例（因为 ./index 中
+    // 有 this._init(options)）
     var vm = this;
+
     // a uid
     vm._uid = uid$3++;
 
+    // web performance API 用于测量杨业和 web 应用程序的性能
     var startTag, endTag;
     /* istanbul ignore if */
+    // 非生产环境 && 开启记录 perf && 在浏览器环境中（因为存在 window.performance）
     if ("development" !== 'production' && config.performance && mark) {
       startTag = "vue-perf-start:" + (vm._uid);
       endTag = "vue-perf-end:" + (vm._uid);
+
+      // src/core/util/perf.js
+      // mark = tag => (inBrowser && window.performance).mark(tag)
       mark(startTag);
     }
 
     // a flag to avoid this being observed
     vm._isVue = true;
+
     // merge options
+    // options 参数是 new Vue() 传入的参数对象
     if (options && options._isComponent) {
       // optimize internal component instantiation
+      // 优化内部组件实例化过程
       // since dynamic options merging is pretty slow, and none of the
+      // 因为动态选项合并实在太慢了，所有的内部组件选项都不需要特殊对待
       // internal component options needs special treatment.
       initInternalComponent(vm, options);
     } else {
+      // 将 options 合并
+      // mergeOptions(parent, child, vm) 返回一个新的 options 对象
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -4632,12 +4632,34 @@ function initMixin (Vue) {
     }
     // expose real self
     vm._self = vm;
+
+    /**
+     * vm.$parent = parent
+     * vm.$root = parent ? parent.$root : vm
+     * vm.$children = []
+     * vm.$refs = {}
+     * vm._watcher = null
+     * vm._inactive = null
+     * vm._directInactive = false
+     * vm._isMounted = false
+     * vm._isDestroyed = false
+     * vm._isBeingDestroyed = false
+     */
     initLifecycle(vm);
+
+    /**
+     * vm._events = Object.create(null) // 没有 __proto__ 的对象
+     * vm._hasHookEvent = false
+     */
     initEvents(vm);
     initRender(vm);
     callHook(vm, 'beforeCreate');
+
+    // inject 选项，需与其他祖先组件的 provide 选项一起使用
     initInjections(vm); // resolve injections before data/props
     initState(vm);
+
+    // provide 选项，需与其他后代组件的 inject 选项一起使用
     initProvide(vm); // resolve provide after data/props
     callHook(vm, 'created');
 
@@ -4655,6 +4677,7 @@ function initMixin (Vue) {
 }
 
 function initInternalComponent (vm, options) {
+  // Object.create(A) 以对象A为对象原型创建一个新的对象
   var opts = vm.$options = Object.create(vm.constructor.options);
   // doing this because it's faster than dynamic enumeration.
   var parentVnode = options._parentVnode;
@@ -4736,13 +4759,67 @@ function Vue (options) {
   ) {
     warn('Vue is a constructor and should be called with the `new` keyword');
   }
+
+  // this 指向 vue 实例。 const ins = new Vue()
   this._init(options);
 }
 
+// 向 Vue 原型上挂载 _init 方法
+// Vue.prototype._init = function (options?: object) {}
 initMixin(Vue);
+
+/**
+ * 定义 vue $data $props $watch
+ * Object.defineProperty(Vue.prototype, '$data', dataDef)
+ * Object.defineProperty(Vue.prototype, '$props', propsDef)
+ * Vue.prototype.$set = set
+ * Vue.prototype.$delete = del
+ * Vue.prototype.$watch = function (expOrFn, cb, options) {}
+ */
 stateMixin(Vue);
+
+/**
+ * 定义事件相关方法
+ * Vue.prototype.$on = function (event, fn) {}
+ * Vue.prototype.$once = function (event, fn) {}
+ * Vue.prototype.$off = function (event?, fn?) {}
+ * Vue.prototype.$emit = function (event) {}
+ */
 eventsMixin(Vue);
+
+/**
+ * 定义生命周期相关方法
+ * Vue.prototype._update = function(VNode, hydrating)
+ * Vue.prototype.$forceUpdate = function () {}
+ * Vue.prototype.$destroy = function () {}
+ */
 lifecycleMixin(Vue);
+
+/**
+ * installRenderHelpers 函数
+ * Vue.prototype._o = markOnce
+ * Vue.prototype._n = toNumber
+ * Vue.prototype._s = toString
+ * Vue.prototype._l = renderList
+ * Vue.prototype._t = renderSlot
+ * Vue.prototype._q = looseEqual
+ * Vue.prototype._i = looseIndexOf
+ * Vue.prototype._m = renderStatic
+ * Vue.prototype._f = resolveFilter
+ * Vue.prototype._k = checkKeyCodes
+ * Vue.prototype._b = bindObjectProps
+ * Vue.prototype._v = createTextVNode
+ * Vue.prototype._e = createEmptyVNode
+ * Vue.prototype._u = resolveScopedSlots
+ * Vue.prototype._g = bindObjectListeners
+ */
+
+/**
+ * 定义渲染方法
+ * 执行 installRenderHelpers(Vue.prototype)
+ * Vue.prototype.$nextTick = function (fn) {}
+ * Vue.prototype._render = function () {}
+ */
 renderMixin(Vue);
 
 /*  */
@@ -5063,6 +5140,7 @@ function initGlobalAPI (Vue) {
   Vue.delete = del;
   Vue.nextTick = nextTick;
 
+  // Object.create(null) 创建一个没有隐式原型的对象（没有__proto__）
   Vue.options = Object.create(null);
   ASSET_TYPES.forEach(function (type) {
     Vue.options[type + 's'] = Object.create(null);
@@ -5072,16 +5150,44 @@ function initGlobalAPI (Vue) {
   // components with in Weex's multi-instance scenarios.
   Vue.options._base = Vue;
 
+  /**
+   * 将第一参数中所有属性及其值复制给第二参数（通过 for in 实现。shared/util）
+   * Vue.options.components.KeepAlive = { name: 'keep-alive' ...}
+   */
   extend(Vue.options.components, builtInComponents);
 
+  // Vue.use = function (plugin) {}
   initUse(Vue);
+
+  // Vue.mixin = function (Vue) {}
   initMixin$1(Vue);
+
+  /**
+   * Vue.cid = 0
+   * let cid = 1
+   * Vue.extend = function (extendOptions) {}
+   */
   initExtend(Vue);
+
+  /**
+   * ASSET_TYPES = [
+   *    'component',
+   *    'directive',
+   *    'filter'
+   * ]
+   * 调用 ASSET_TYPES.forEach(),
+   * 其中操作为：
+   * Vue.component = function () {}
+   * Vue.directive = function () {}
+   * Vue.filter = function () {}
+   */
   initAssetRegisters(Vue);
 }
 
+// 此时的 Vue 原型上，已经初始化了一些方法和属性
 initGlobalAPI(Vue);
 
+// 定义检测是否为服务器环境
 Object.defineProperty(Vue.prototype, '$isServer', {
   get: isServerRendering
 });
@@ -5095,6 +5201,7 @@ Object.defineProperty(Vue.prototype, '$ssrContext', {
 
 // expose FunctionalRenderContext for ssr runtime helper installation
 Object.defineProperty(Vue, 'FunctionalRenderContext', {
+  // 属性描述符默认值，不可更改描述符，不可枚举
   value: FunctionalRenderContext
 });
 
@@ -5102,8 +5209,6 @@ Vue.version = '2.5.17-beta.0';
 
 /*  */
 
-// these are reserved for web because they are directly compiled away
-// during template compilation
 var isReservedAttr = makeMap('style,class');
 
 // attributes that should be using props for binding
@@ -5300,9 +5405,6 @@ var isTextInputType = makeMap('text,number,password,search,email,tel,url');
 
 /*  */
 
-/**
- * Query an element selector if it's not an element already.
- */
 function query (el) {
   if (typeof el === 'string') {
     var selected = document.querySelector(el);
@@ -7040,10 +7142,6 @@ function genDefaultModel (
 
 /*  */
 
-// normalize v-model event tokens that can only be determined at runtime.
-// it's important to place the event as the first in the array because
-// the whole point is ensuring the v-model callback gets called before
-// user-attached handlers.
 function normalizeEvents (on) {
   /* istanbul ignore if */
   if (isDef(on[RANGE_TOKEN])) {
@@ -7949,8 +8047,6 @@ var platformModules = [
 
 /*  */
 
-// the directive module should be applied last, after all
-// built-in modules have been applied.
 var modules = platformModules.concat(baseModules);
 
 var patch = createPatchFunction({ nodeOps: nodeOps, modules: modules });
@@ -7960,7 +8056,6 @@ var patch = createPatchFunction({ nodeOps: nodeOps, modules: modules });
  * properties to Elements.
  */
 
-/* istanbul ignore if */
 if (isIE9) {
   // http://www.matts411.com/post/internet-explorer-9-oninput/
   document.addEventListener('selectionchange', function () {
@@ -8096,7 +8191,6 @@ function trigger (el, type) {
 
 /*  */
 
-// recursively search for possible transition defined inside the component root
 function locateNode (vnode) {
   return vnode.componentInstance && (!vnode.data || !vnode.data.transition)
     ? locateNode(vnode.componentInstance._vnode)
@@ -8534,7 +8628,6 @@ var platformComponents = {
 
 /*  */
 
-// install platform specific utils
 Vue.config.mustUseProp = mustUseProp;
 Vue.config.isReservedTag = isReservedTag;
 Vue.config.isReservedAttr = isReservedAttr;
@@ -8542,10 +8635,16 @@ Vue.config.getTagNamespace = getTagNamespace;
 Vue.config.isUnknownElement = isUnknownElement;
 
 // install platform runtime directives & components
+
+/**
+ * Vue.options.directives = { model: ..., show: ... }
+ * Vue.options.components = { KeepAlive: ..., Transition: ..., TransitionGroup: ... } 其中 KeepAlive 属性是在 core/index.js 的 initGlobalAPI(Vue) 时添加
+ */
 extend(Vue.options.directives, platformDirectives);
 extend(Vue.options.components, platformComponents);
 
 // install platform patch function
+// patch 是虚拟 DOM 所用到的方法
 Vue.prototype.__patch__ = inBrowser ? patch : noop;
 
 // public mount method
@@ -8769,7 +8868,6 @@ var isNonPhrasingTag = makeMap(
  * http://erik.eae.net/simplehtmlparser/simplehtmlparser.js
  */
 
-// Regular Expressions for parsing tags and attributes
 var attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
 // could use https://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-QName
 // but for Vue templates we can enforce a simple charset
@@ -10032,6 +10130,8 @@ function genHandlers (
   return res.slice(0, -1) + '}'
 }
 
+// Generate handler code with binding params on Weex
+/* istanbul ignore next */
 function genHandler (
   name,
   handler
@@ -10577,7 +10677,7 @@ function genProps (props) {
   return res.slice(0, -1)
 }
 
-// #3895, #4268
+/* istanbul ignore next */
 function transformSpecialNewlines (text) {
   return text
     .replace(/\u2028/g, '\\u2028')
@@ -10586,8 +10686,6 @@ function transformSpecialNewlines (text) {
 
 /*  */
 
-// these keywords should not appear inside expressions, but operators like
-// typeof, instanceof and in are allowed
 var prohibitedKeywordRE = new RegExp('\\b' + (
   'do,if,for,let,new,try,var,case,else,with,await,break,catch,class,const,' +
   'super,throw,while,yield,delete,export,import,return,switch,default,' +
@@ -10842,9 +10940,6 @@ function createCompilerCreator (baseCompile) {
 
 /*  */
 
-// `createCompilerCreator` allows creating compilers that use alternative
-// parser/optimizer/codegen, e.g the SSR optimizing compiler.
-// Here we just export a default compiler using the default parts.
 var createCompiler = createCompilerCreator(function baseCompile (
   template,
   options
@@ -10868,7 +10963,6 @@ var compileToFunctions = ref$1.compileToFunctions;
 
 /*  */
 
-// check whether current browser encodes a char inside attribute values
 var div;
 function getShouldDecode (href) {
   div = div || document.createElement('div');
@@ -10888,6 +10982,7 @@ var idToTemplate = cached(function (id) {
   return el && el.innerHTML
 });
 
+// 复写 在 runtime/index 中定义的 $mount 方法
 var mount = Vue.prototype.$mount;
 Vue.prototype.$mount = function (
   el,
@@ -10971,6 +11066,7 @@ function getOuterHTML (el) {
   }
 }
 
+// 挂载 compile, compilerToFunctions 将 template 编译为 render 函数
 Vue.compile = compileToFunctions;
 
 return Vue;

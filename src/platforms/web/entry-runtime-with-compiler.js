@@ -14,6 +14,7 @@ const idToTemplate = cached(id => {
   return el && el.innerHTML
 })
 
+// 复写 在 runtime/index 中定义的 $mount 方法
 const mount = Vue.prototype.$mount
 Vue.prototype.$mount = function (
   el?: string | Element,
@@ -95,6 +96,7 @@ function getOuterHTML (el: Element): string {
   }
 }
 
+// 挂载 compile, compilerToFunctions 将 template 编译为 render 函数
 Vue.compile = compileToFunctions
 
 export default Vue

@@ -22,6 +22,7 @@ export let activeInstance: any = null
 export let isUpdatingChildComponent: boolean = false
 
 export function initLifecycle (vm: Component) {
+  // 传入 vue 实例 vm
   const options = vm.$options
 
   // locate first non-abstract parent
