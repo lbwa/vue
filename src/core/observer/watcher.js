@@ -19,8 +19,11 @@ let uid = 0
 
 /**
  * A watcher parses an expression, collects dependencies,
+ * 一个 watcher 解析一个表达式，收集依赖，
  * and fires callback when the expression value changes.
+ * 当表达值的值变化时，执行回调函数
  * This is used for both the $watch() api and directives.
+ * 这被用于 $watch() 和 vue 指令
  */
 export default class Watcher {
   vm: Component;
@@ -49,6 +52,7 @@ export default class Watcher {
     options?: ?Object,
     isRenderWatcher?: boolean
   ) {
+    // 以下 this 是指 Watcher 的实例！！
     this.vm = vm
     if (isRenderWatcher) {
       vm._watcher = this

@@ -62,7 +62,7 @@ export function initMixin (Vue: Class<Component>) {
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
       // 非生产环境时，
-      // vm._renderProxy = nre Proxy(vm, handles)
+      // vm._renderProxy = new Proxy(vm, handles)
       initProxy(vm)
     } else {
       vm._renderProxy = vm
@@ -105,6 +105,13 @@ export function initMixin (Vue: Class<Component>) {
 
     // inject 选项，需与其他祖先组件的 provide 选项一起使用
     initInjections(vm) // resolve injections before data/props
+
+    // vm._watchers = []
+    // initProps()
+    // initMethods()
+    // initData()
+    // initComputed()
+    // initWatch()
     initState(vm)
 
     // provide 选项，需与其他后代组件的 inject 选项一起使用

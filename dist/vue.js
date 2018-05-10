@@ -875,6 +875,7 @@ var Observer = function Observer (value) {
   this.value = value;
   this.dep = new Dep();
   this.vmCount = 0;
+  // def 函数即 Object.defineProperty()
   def(value, '__ob__', this);
   if (Array.isArray(value)) {
     var augment = hasProto
@@ -934,20 +935,27 @@ function copyAugment (target, src, keys) {
 
 /**
  * Attempt to create an observer instance for a value,
+ * 试图去给一个 value 创建一个观察实例
  * returns the new observer if successfully observed,
+ * 当成功观察（到值的变化）时，返回一个新的观察实例
  * or the existing observer if the value already has one.
+ * 当已经存在一个观察实例时，返回这个已存在的观察实例
  */
 function observe (value, asRootData) {
+  // 检测传入的被观测对象 value
   if (!isObject(value) || value instanceof VNode) {
     return
   }
   var ob;
+  // 检测在当前值上是否已经存在 Observer 实例
+  // __ob__ 是否是 value 自身的属性且 value.__ob__ 是 Observer 的实例，其中 __ob__ 在 Observer 构造函数中定义
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__;
   } else if (
     shouldObserve &&
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
+    // Object.isExtensible() 方法判断一个对象是否是可扩展的（是否可以在它上面添加新的属性）。
     Object.isExtensible(value) &&
     !value._isVue
   ) {
@@ -2733,7 +2741,7 @@ function lifecycleMixin (Vue) {
 
 function mountComponent (
   vm,
-  el,
+  el, // 挂载目标
   hydrating
 ) {
   vm.$el = el;
@@ -2787,6 +2795,7 @@ function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  // export function noop (a?: any, b?: any, c?: any) {}
   new Watcher(vm, updateComponent, noop, {
     before: function before () {
       if (vm._isMounted) {
@@ -3080,8 +3089,11 @@ var uid$1 = 0;
 
 /**
  * A watcher parses an expression, collects dependencies,
+ * 一个 watcher 解析一个表达式，收集依赖，
  * and fires callback when the expression value changes.
+ * 当表达值的值变化时，执行回调函数
  * This is used for both the $watch() api and directives.
+ * 这被用于 $watch() 和 vue 指令
  */
 var Watcher = function Watcher (
   vm,
@@ -3090,6 +3102,7 @@ var Watcher = function Watcher (
   options,
   isRenderWatcher
 ) {
+  // 以下 this 是指 Watcher 的实例！！
   this.vm = vm;
   if (isRenderWatcher) {
     vm._watcher = this;
@@ -3332,8 +3345,6 @@ function proxy (target, sourceKey, key) {
 }
 
 function initState (vm) {
-  console.log('vm :', vm);
-  debugger
   vm._watchers = [];
   var opts = vm.$options;
   if (opts.props) { initProps(vm, opts.props); }
@@ -3417,12 +3428,14 @@ function initData (vm) {
     );
   }
   // proxy data on instance
-  var keys = Object.keys(data);
+  var keys = Object.keys(data); // data 中所有属性的键名组成的数组
   var props = vm.$options.props;
   var methods = vm.$options.methods;
   var i = keys.length;
+  // 迭代 data 中键名，以将实例中的 data 对象所有属性进行数据劫持
   while (i--) {
     var key = keys[i];
+    // 当有重复声明时，将抛出提示
     {
       if (methods && hasOwn(methods, key)) {
         warn(
@@ -3437,11 +3450,15 @@ function initData (vm) {
         "Use prop default value instead.",
         vm
       );
+      // isReserved() 检测是否是 $ 或 _ 开头
     } else if (!isReserved(key)) {
+      // 使用 Object.property() 数据劫持
+      // this.targets 访问的都是 this._data.target
       proxy(vm, "_data", key);
     }
   }
   // observe data
+  // 观测 data 对象各项的变化
   observe(data, true /* asRootData */);
 }
 
@@ -4651,7 +4668,7 @@ function initMixin (Vue) {
     /* istanbul ignore else */
     {
       // 非生产环境时，
-      // vm._renderProxy = nre Proxy(vm, handles)
+      // vm._renderProxy = new Proxy(vm, handles)
       initProxy(vm);
     }
     // expose real self
@@ -4692,6 +4709,13 @@ function initMixin (Vue) {
 
     // inject 选项，需与其他祖先组件的 provide 选项一起使用
     initInjections(vm); // resolve injections before data/props
+
+    // vm._watchers = []
+    // initProps()
+    // initMethods()
+    // initData()
+    // initComputed()
+    // initWatch()
     initState(vm);
 
     // provide 选项，需与其他后代组件的 inject 选项一起使用
@@ -8688,6 +8712,7 @@ Vue.prototype.$mount = function (
   hydrating
 ) {
   el = el && inBrowser ? query(el) : undefined;
+  // 返回 生命周期方法 mountComponent() 方法 的执行结果
   return mountComponent(this, el, hydrating)
 };
 
@@ -11017,8 +11042,10 @@ var idToTemplate = cached(function (id) {
   return el && el.innerHTML
 });
 
-// 复写 在 runtime/index 中定义的 $mount 方法
+// 缓存之前的 Vue.prototype.$mount 方法
 var mount = Vue.prototype.$mount;
+
+// 复写 在 runtime/index 中定义的 $mount 方法
 Vue.prototype.$mount = function (
   el,
   hydrating
@@ -11036,6 +11063,7 @@ Vue.prototype.$mount = function (
   var options = this.$options;
   // resolve template/el and convert to render function
   if (!options.render) {
+    // 获得 template 选项
     var template = options.template;
     if (template) {
       if (typeof template === 'string') {
@@ -11060,12 +11088,16 @@ Vue.prototype.$mount = function (
     } else if (el) {
       template = getOuterHTML(el);
     }
+
+    // 使用 渲染函数 渲染 template 选项
     if (template) {
       /* istanbul ignore if */
+      // 性能记录
       if ("development" !== 'production' && config.performance && mark) {
         mark('compile');
       }
 
+      // 将 template 编译为 render 函数
       var ref = compileToFunctions(template, {
         shouldDecodeNewlines: shouldDecodeNewlines,
         shouldDecodeNewlinesForHref: shouldDecodeNewlinesForHref,
@@ -11074,6 +11106,7 @@ Vue.prototype.$mount = function (
       }, this);
       var render = ref.render;
       var staticRenderFns = ref.staticRenderFns;
+      // 向 vm 实例挂载 render 选项
       options.render = render;
       options.staticRenderFns = staticRenderFns;
 
@@ -11084,6 +11117,8 @@ Vue.prototype.$mount = function (
       }
     }
   }
+
+  // 返回调用之前缓存的 mount 方法的结果
   return mount.call(this, el, hydrating)
 };
 

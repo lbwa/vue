@@ -39,10 +39,12 @@ export class Observer {
   dep: Dep;
   vmCount: number; // number of vms that has this object as root $data
 
+  // 此处 this 指向 Observer 实例
   constructor (value: any) {
     this.value = value
     this.dep = new Dep()
     this.vmCount = 0
+    // def 函数即 Object.defineProperty()
     def(value, '__ob__', this)
     if (Array.isArray(value)) {
       const augment = hasProto
@@ -103,20 +105,27 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
 
 /**
  * Attempt to create an observer instance for a value,
+ * 试图去给一个 value 创建一个观察实例
  * returns the new observer if successfully observed,
+ * 当成功观察（到值的变化）时，返回一个新的观察实例
  * or the existing observer if the value already has one.
+ * 当已经存在一个观察实例时，返回这个已存在的观察实例
  */
 export function observe (value: any, asRootData: ?boolean): Observer | void {
+  // 检测传入的被观测对象 value
   if (!isObject(value) || value instanceof VNode) {
     return
   }
   let ob: Observer | void
+  // 检测在当前值上是否已经存在 Observer 实例
+  // __ob__ 是否是 value 自身的属性且 value.__ob__ 是 Observer 的实例，其中 __ob__ 在 Observer 构造函数中定义
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
     shouldObserve &&
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
+    // Object.isExtensible() 方法判断一个对象是否是可扩展的（是否可以在它上面添加新的属性）。
     Object.isExtensible(value) &&
     !value._isVue
   ) {

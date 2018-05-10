@@ -14,8 +14,10 @@ const idToTemplate = cached(id => {
   return el && el.innerHTML
 })
 
-// 复写 在 runtime/index 中定义的 $mount 方法
+// 缓存之前的 Vue.prototype.$mount 方法
 const mount = Vue.prototype.$mount
+
+// 复写 在 runtime/index 中定义的 $mount 方法
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
@@ -33,6 +35,7 @@ Vue.prototype.$mount = function (
   const options = this.$options
   // resolve template/el and convert to render function
   if (!options.render) {
+    // 获得 template 选项
     let template = options.template
     if (template) {
       if (typeof template === 'string') {
@@ -57,18 +60,23 @@ Vue.prototype.$mount = function (
     } else if (el) {
       template = getOuterHTML(el)
     }
+
+    // 使用 渲染函数 渲染 template 选项
     if (template) {
       /* istanbul ignore if */
+      // 性能记录
       if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
         mark('compile')
       }
 
+      // 将 template 编译为 render 函数
       const { render, staticRenderFns } = compileToFunctions(template, {
         shouldDecodeNewlines,
         shouldDecodeNewlinesForHref,
         delimiters: options.delimiters,
         comments: options.comments
       }, this)
+      // 向 vm 实例挂载 render 选项
       options.render = render
       options.staticRenderFns = staticRenderFns
 
@@ -79,6 +87,8 @@ Vue.prototype.$mount = function (
       }
     }
   }
+
+  // 返回调用之前缓存的 mount 方法的结果
   return mount.call(this, el, hydrating)
 }
 

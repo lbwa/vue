@@ -46,8 +46,6 @@ export function proxy (target: Object, sourceKey: string, key: string) {
 }
 
 export function initState (vm: Component) {
-  console.log('vm :', vm)
-  debugger
   vm._watchers = []
   const opts = vm.$options
   if (opts.props) initProps(vm, opts.props)
@@ -131,12 +129,14 @@ function initData (vm: Component) {
     )
   }
   // proxy data on instance
-  const keys = Object.keys(data)
+  const keys = Object.keys(data) // data 中所有属性的键名组成的数组
   const props = vm.$options.props
   const methods = vm.$options.methods
   let i = keys.length
+  // 迭代 data 中键名，以将实例中的 data 对象所有属性进行数据劫持
   while (i--) {
     const key = keys[i]
+    // 当有重复声明时，将抛出提示
     if (process.env.NODE_ENV !== 'production') {
       if (methods && hasOwn(methods, key)) {
         warn(
@@ -151,11 +151,15 @@ function initData (vm: Component) {
         `Use prop default value instead.`,
         vm
       )
+      // isReserved() 检测是否是 $ 或 _ 开头
     } else if (!isReserved(key)) {
+      // 使用 Object.property() 数据劫持
+      // this.targets 访问的都是 this._data.target
       proxy(vm, `_data`, key)
     }
   }
   // observe data
+  // 观测 data 对象各项的变化
   observe(data, true /* asRootData */)
 }
 

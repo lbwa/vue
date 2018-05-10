@@ -45,6 +45,7 @@ Vue.prototype.$mount = function (
   hydrating?: boolean
 ): Component {
   el = el && inBrowser ? query(el) : undefined
+  // 返回 生命周期方法 mountComponent() 方法 的执行结果
   return mountComponent(this, el, hydrating)
 }
 
