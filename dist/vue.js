@@ -671,6 +671,7 @@ var formatComponentName = (noop);
 
 /*  */
 
+// 只是引入的 Watcher 类型！！并没有把 Watcher import 进本模块
 
 var uid = 0;
 
@@ -684,6 +685,7 @@ var Dep = function Dep () {
 };
 
 Dep.prototype.addSub = function addSub (sub) {
+  // 为当前依赖收集器添加 Watcher
   this.subs.push(sub);
 };
 
@@ -692,23 +694,38 @@ Dep.prototype.removeSub = function removeSub (sub) {
 };
 
 Dep.prototype.depend = function depend () {
+  // 此处的 Dep.target 由本模块的 pushTarget 函数传入
   if (Dep.target) {
+    // this 为 Dep 实例
+    /**
+     * 调用 Dep.target.addDep() 即是调用 Watcher 原型的方法，在 addDep() 中记录当
+     * 前 dep 实例和 dep id，之后在 addDep() 中调用 dep.addSubs(this),那么此时
+     * dep 也记录了当前 Watcher 实例，将当前 Watcher 实例存入 dep.subs 中。
+     */
     Dep.target.addDep(this);
   }
 };
 
 Dep.prototype.notify = function notify () {
   // stabilize the subscriber list first
+  // 首先固定（或理解为冻结） subs 队列，防止下面 for 循环中无限循环
   var subs = this.subs.slice();
   for (var i = 0, l = subs.length; i < l; i++) {
+    // 通知依赖收集器中所有 Watcher，调用其 update 方法
     subs[i].update();
   }
 };
 
+// the current target watcher being evaluated.
+// 最近被评估的的目标 watcher
+// this is globally unique because there could be only one
+// 这是全局唯一的一个，因为在任何时候只有唯一的一个 watcher 被评估
+// watcher being evaluated at any time.
 Dep.target = null;
 var targetStack = [];
 
 function pushTarget (_target) {
+  // 此处将 Dep 本身的静态属性 target 与 Watcher 联系了起来
   if (Dep.target) { targetStack.push(Dep.target); }
   Dep.target = _target;
 }
@@ -969,6 +986,7 @@ function observe (value, asRootData) {
 
 /**
  * Define a reactive property on an Object.
+ * // $attr，$listener，vm._data中的每一项 均会调用此方法（按照这个顺序）
  */
 function defineReactive (
   obj,
@@ -979,7 +997,11 @@ function defineReactive (
 ) {
   var dep = new Dep();
 
+  // Object.getOwnPropertyDescriptor() 方法返回对象上一个自有属性对应的属性描述符。
+  // 此处是为了得到对象上某一自有属性的 getter 和 setter
   var property = Object.getOwnPropertyDescriptor(obj, key);
+
+  // 当描述符不可改变时，结束函数执行
   if (property && property.configurable === false) {
     return
   }
@@ -987,6 +1009,7 @@ function defineReactive (
   // cater for pre-defined getter/setters
   var getter = property && property.get;
   var setter = property && property.set;
+  // 在没有 getter 或存在 setter 且传入的参数个数为 2 时，拓展第三个参数 val
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key];
   }
@@ -997,7 +1020,9 @@ function defineReactive (
     configurable: true,
     get: function reactiveGetter () {
       var value = getter ? getter.call(obj) : val;
+      // 将 obj 的键值 val 经过特殊处理再返回
       if (Dep.target) {
+        // 通知 Dep 依赖收集器实例，收集新的依赖
         dep.depend();
         if (childOb) {
           childOb.dep.depend();
@@ -1024,6 +1049,9 @@ function defineReactive (
         val = newVal;
       }
       childOb = !shallow && observe(newVal);
+
+      // 因为 newVal !== value，故调用 dep 中的 Watcher  实例
+      // 通知 Dep 依赖收集器实例，更新依赖，这是响应式原理的关键！！
       dep.notify();
     }
   });
@@ -2782,7 +2810,11 @@ function mountComponent (
       measure(("vue " + name + " render"), startTag, endTag);
 
       mark(startTag);
+
+      // 与虚拟 DOM 相关操作，另外此处代码块内容为 window.performance 相关代码
+      // 等价 vm._update(vm.render(), hydrating)
       vm._update(vnode, hydrating);
+
       mark(endTag);
       measure(("vue " + name + " patch"), startTag, endTag);
     };
@@ -3154,10 +3186,13 @@ var Watcher = function Watcher (
  * Evaluate the getter, and re-collect dependencies.
  */
 Watcher.prototype.get = function get () {
+  // 将 Watcher 实例引用复制给 Dep.target
   pushTarget(this);
   var value;
   var vm = this.vm;
   try {
+    // 因为 this.getter = expOrFn
+    // 所以，相当于调用 core/instance/lifecycle 中的 updateComponent()
     value = this.getter.call(vm, vm);
   } catch (e) {
     if (this.user) {
@@ -3457,6 +3492,7 @@ function initData (vm) {
       proxy(vm, "_data", key);
     }
   }
+
   // observe data
   // 观测 data 对象各项的变化
   observe(data, true /* asRootData */);

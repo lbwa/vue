@@ -106,10 +106,13 @@ export default class Watcher {
    * Evaluate the getter, and re-collect dependencies.
    */
   get () {
+    // 将 Watcher 实例引用复制给 Dep.target
     pushTarget(this)
     let value
     const vm = this.vm
     try {
+      // 因为 this.getter = expOrFn
+      // 所以，相当于调用 core/instance/lifecycle 中的 updateComponent()
       value = this.getter.call(vm, vm)
     } catch (e) {
       if (this.user) {

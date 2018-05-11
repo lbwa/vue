@@ -175,7 +175,11 @@ export function mountComponent (
       measure(`vue ${name} render`, startTag, endTag)
 
       mark(startTag)
+
+      // 与虚拟 DOM 相关操作，另外此处代码块内容为 window.performance 相关代码
+      // 等价 vm._update(vm.render(), hydrating)
       vm._update(vnode, hydrating)
+
       mark(endTag)
       measure(`vue ${name} patch`, startTag, endTag)
     }

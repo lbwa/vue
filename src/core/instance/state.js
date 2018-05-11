@@ -158,6 +158,7 @@ function initData (vm: Component) {
       proxy(vm, `_data`, key)
     }
   }
+
   // observe data
   // 观测 data 对象各项的变化
   observe(data, true /* asRootData */)

@@ -139,6 +139,7 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 
 /**
  * Define a reactive property on an Object.
+ * // $attr，$listener，vm._data中的每一项 均会调用此方法（按照这个顺序）
  */
 export function defineReactive (
   obj: Object,
@@ -149,7 +150,11 @@ export function defineReactive (
 ) {
   const dep = new Dep()
 
+  // Object.getOwnPropertyDescriptor() 方法返回对象上一个自有属性对应的属性描述符。
+  // 此处是为了得到对象上某一自有属性的 getter 和 setter
   const property = Object.getOwnPropertyDescriptor(obj, key)
+
+  // 当描述符不可改变时，结束函数执行
   if (property && property.configurable === false) {
     return
   }
@@ -157,6 +162,7 @@ export function defineReactive (
   // cater for pre-defined getter/setters
   const getter = property && property.get
   const setter = property && property.set
+  // 在没有 getter 或存在 setter 且传入的参数个数为 2 时，拓展第三个参数 val
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
@@ -167,7 +173,9 @@ export function defineReactive (
     configurable: true,
     get: function reactiveGetter () {
       const value = getter ? getter.call(obj) : val
+      // 将 obj 的键值 val 经过特殊处理再返回
       if (Dep.target) {
+        // 通知 Dep 依赖收集器实例，收集新的依赖
         dep.depend()
         if (childOb) {
           childOb.dep.depend()
@@ -194,6 +202,9 @@ export function defineReactive (
         val = newVal
       }
       childOb = !shallow && observe(newVal)
+
+      // 因为 newVal !== value，故调用 dep 中的 Watcher  实例
+      // 通知 Dep 依赖收集器实例，更新依赖，这是响应式原理的关键！！
       dep.notify()
     }
   })
