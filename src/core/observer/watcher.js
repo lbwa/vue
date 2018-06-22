@@ -104,6 +104,8 @@ export default class Watcher {
 
   /**
    * Evaluate the getter, and re-collect dependencies.
+   * 由 Watcher 类的 constructor 调用 this.get(),故 get 方法中的 this 指向当前
+   * Watcher 实例
    */
   get () {
     // 将 Watcher 实例引用复制给 Dep.target
