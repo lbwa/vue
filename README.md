@@ -14,4 +14,4 @@ src
 
 ## Mindmap
 
-![mindmap](./doc/vue.js)
+![mindmap](./doc/vuejs.svg)
