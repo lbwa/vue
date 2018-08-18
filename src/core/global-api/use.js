@@ -7,6 +7,7 @@ export function initUse (Vue: GlobalAPI) {
     // 判断重复安装插件
     const installedPlugins = (this._installedPlugins || (this._installedPlugins = []))
     if (installedPlugins.indexOf(plugin) > -1) {
+      // 当 Vue.use 被调用时，此函数体内 this 指向 Vue
       return this
     }
 
