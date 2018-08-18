@@ -3,6 +3,7 @@
 // 只是引入的 Watcher 类型！！并没有把 Watcher import 进本模块
 import type Watcher from './watcher'
 import { remove } from '../util/index'
+import config from '../config'
 
 let uid = 0
 
@@ -48,6 +49,12 @@ export default class Dep {
     // stabilize the subscriber list first
     // 首先固定（或理解为冻结） subs 队列，防止下面 for 循环中无限循环
     const subs = this.subs.slice()
+    if (process.env.NODE_ENV !== 'production' && !config.async) {
+      // subs aren't sorted in scheduler if not running async
+      // we need to sort them now to make sure they fire in correct
+      // order
+      subs.sort((a, b) => a.id - b.id)
+    }
     for (let i = 0, l = subs.length; i < l; i++) {
       // 通知依赖收集器中所有 Watcher，调用其 update 方法
       subs[i].update()
