@@ -14,9 +14,7 @@ src
 
 ## Mindmap
 
-<<<<<<< HEAD
 ![mindmap](./doc/vuejs.svg)
-=======
 - [Become a backer or sponsor on Patreon](https://www.patreon.com/evanyou).
 - [Become a backer or sponsor on Open Collective](https://opencollective.com/vuejs).
 - [One-time donation via PayPal or crypto-currencies.](https://vuejs.org/support-vuejs/#One-time-Donations)
@@ -322,4 +320,3 @@ Thank you to all the people who already contributed to Vue!
 [MIT](http://opensource.org/licenses/MIT)
 
 Copyright (c) 2013-present, Yuxi (Evan) You
->>>>>>> upstream/dev
