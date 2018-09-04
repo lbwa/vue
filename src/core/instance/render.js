@@ -56,6 +56,7 @@ export function renderMixin (Vue: Class<Component>) {
   installRenderHelpers(Vue.prototype)
 
   Vue.prototype.$nextTick = function (fn: Function) {
+    // vm.$nextTick 默认绑定上下文为 this，即 vue 实例
     return nextTick(fn, this)
   }
 

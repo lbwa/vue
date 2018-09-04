@@ -1,6 +1,13 @@
 /* @flow */
 /* globals MessageChannel */
 
+/**
+ * 1. 通过 w3c event loops processing model 可知在每次执行完一个 task 之后，将清空
+ * microtask，之后若当前上下文是浏览器上下文，接下来 `一定` 会执行渲染进程。
+ * 2. 故直接使用 macrotask 实现将导致浏览器渲染两次。故 nextTick 默认使用 microtask
+ * 3. https://www.w3.org/TR/html5/webappapis.html#event-loops-processing-model
+ */
+
 import { noop } from 'shared/util'
 import { handleError } from './error'
 import { isIOS, isNative } from './env'
@@ -8,6 +15,7 @@ import { isIOS, isNative } from './env'
 const callbacks = []
 let pending = false
 
+// 执行容器中的 cb 回调函数
 function flushCallbacks () {
   pending = false
   const copies = callbacks.slice(0)
@@ -25,6 +33,7 @@ function flushCallbacks () {
 // when state is changed right before repaint (e.g. #6813, out-in transitions).
 // Here we use microtask by default, but expose a way to force (macro) task when
 // needed (e.g. in event handlers attached by v-on).
+// ! 在 v-on 附加的事件监听器中，将使用 marcotask 来实现 nextTick
 let microTimerFunc
 let macroTimerFunc
 let useMacroTask = false
@@ -33,6 +42,8 @@ let useMacroTask = false
 // Technically setImmediate should be the ideal choice, but it's only available
 // in IE. The only polyfill that consistently queues the callback after all DOM
 // events triggered in the same loop is by using MessageChannel.
+// ! 优先使用 setImmediate，否则使用 MessageChannel，否则使用 setTimeout
+// ! 通过 MessageChannel 来实现 setImmediate（宏任务异步回调）
 /* istanbul ignore if */
 if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
   macroTimerFunc = () => {
@@ -71,6 +82,7 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
   }
 } else {
   // fallback to macro
+  // 在不支持 Promise 的浏览器中默认使用 macrotask 实现 nextTick
   microTimerFunc = macroTimerFunc
 }
 
@@ -87,8 +99,12 @@ export function withMacroTask (fn: Function): Function {
   })
 }
 
+// vm.$nextTick 自动绑定 ctx 上下文，即 vue 实例
+// Vue.nextTick 中 ctx 为可选参数
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
+
+  // 向容器中添加 cb 回调函数
   callbacks.push(() => {
     if (cb) {
       try {
@@ -97,14 +113,18 @@ export function nextTick (cb?: Function, ctx?: Object) {
         handleError(e, ctx, 'nextTick')
       }
     } else if (_resolve) {
+      // _resolve 为 resolve 函数或 undefined
       _resolve(ctx)
     }
   })
+
+  // 执行 nextTick 的回调函数容器中的函数
   if (!pending) {
     pending = true
     if (useMacroTask) {
       macroTimerFunc()
     } else {
+      // ! 为了避免不必要的多次重绘，nextTick 默认使用 microtask 实现
       microTimerFunc()
     }
   }
