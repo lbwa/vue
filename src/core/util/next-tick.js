@@ -19,9 +19,9 @@ let pending = false
 
 // 执行容器中的 cb 回调函数
 function flushCallbacks () {
-  pending = false
-  const copies = callbacks.slice(0)
-  callbacks.length = 0
+  pending = false // 重置 pending
+  const copies = callbacks.slice(0) // 获取副本
+  callbacks.length = 0 // 重置 callbacks 容器
   for (let i = 0; i < copies.length; i++) {
     copies[i]()
   }
@@ -46,8 +46,8 @@ let useMacroTask = false
 // events triggered in the same loop is by using MessageChannel.
 /**
  * ! 优先使用 setImmediate，否则使用 MessageChannel，否则使用 setTimeout
- * ! 通过 MessageChannel 来实现 setImmediate（宏任务异步回调）
- * ! setImmediate 的性能优于 setTimeout，因为不必做超时检测；但存在兼容性问题，仅 IE实现
+ * ! 通过 MessageChannel 来代替 setImmediate（宏任务异步回调）
+ * ! setImmediate 的性能优于 setTimeout，因为不必做超时检测；但存在兼容性问题
  */
 /* istanbul ignore if */
 if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
@@ -150,6 +150,8 @@ export function nextTick (cb?: Function, ctx?: Object) {
   }
   // $flow-disable-line
   if (!cb && typeof Promise !== 'undefined') {
+    // 在未传入 cb 函数且执行环境支持 Promise 时，使用 _resolve 缓存 resolve 函数
+    // 配合 callback.push() 使用可起到在未传入 cb 函数时，将返回一个 Promise 实例。
     return new Promise(resolve => {
       _resolve = resolve
     })
