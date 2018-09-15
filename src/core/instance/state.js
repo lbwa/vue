@@ -153,7 +153,7 @@ function initData (vm: Component) {
       )
       // isReserved() 检测是否是 $ 或 _ 开头
     } else if (!isReserved(key)) {
-      // 使用 Object.property() 数据劫持
+      // 使用 Object.defineProperty() 数据劫持
       // this.targets 访问的都是 this._data.target
       proxy(vm, `_data`, key)
     }

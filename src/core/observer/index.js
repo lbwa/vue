@@ -46,14 +46,14 @@ export class Observer {
     this.vmCount = 0
     // def 函数即 Object.defineProperty()
     def(value, '__ob__', this)
-    if (Array.isArray(value)) {
+    if (Array.isArray(value)) { // 如果 value 是数组的话
       const augment = hasProto
         ? protoAugment
         : copyAugment
       augment(value, arrayMethods, arrayKeys)
       this.observeArray(value)
     } else {
-      this.walk(value)
+      this.walk(value) // 当 value 为非数组
     }
   }
 
@@ -62,7 +62,7 @@ export class Observer {
    * getter/setters. This method should only be called when
    * value type is Object.
    */
-  walk (obj: Object) {
+  walk (obj: Object) { // ! 监听非数组对象
     const keys = Object.keys(obj)
     for (let i = 0; i < keys.length; i++) {
       defineReactive(obj, keys[i])
@@ -172,6 +172,7 @@ export function defineReactive (
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
+      // 通过默认的 obj.key 获取键值
       const value = getter ? getter.call(obj) : val
       // 将 obj 的键值 val 经过特殊处理再返回
       if (Dep.target) {
