@@ -186,7 +186,9 @@ function initComputed (vm: Component, computed: Object) {
   const isSSR = isServerRendering()
 
   for (const key in computed) {
+    // 在 computed 中定义的某一项计算属性
     const userDef = computed[key]
+    // ! 从此处看出，在默认情况下 computed 属性默认只有 getter
     const getter = typeof userDef === 'function' ? userDef : userDef.get
     if (process.env.NODE_ENV !== 'production' && getter == null) {
       warn(
@@ -195,8 +197,10 @@ function initComputed (vm: Component, computed: Object) {
       )
     }
 
+    // 为计算属性创建一个内部 watcher
     if (!isSSR) {
       // create internal watcher for the computed property.
+      // 将获取的 getter 与当前 vm 实例作为参数定义一个新的 watcher
       watchers[key] = new Watcher(
         vm,
         getter || noop,
@@ -212,14 +216,17 @@ function initComputed (vm: Component, computed: Object) {
       defineComputed(vm, key, userDef)
     } else if (process.env.NODE_ENV !== 'production') {
       if (key in vm.$data) {
+        // 相对于 data 选项的重复 key 值
         warn(`The computed property "${key}" is already defined in data.`, vm)
       } else if (vm.$options.props && key in vm.$options.props) {
+        // 相对于 props 选项的重复 key 值
         warn(`The computed property "${key}" is already defined as a prop.`, vm)
       }
     }
   }
 }
 
+// computed 选项的每一个键值都会调用该函数用于设置 setter / getter
 export function defineComputed (
   target: any,
   key: string,
@@ -227,22 +234,32 @@ export function defineComputed (
 ) {
   const shouldCache = !isServerRendering()
   if (typeof userDef === 'function') {
+    // ! 修改默认的 shardPropertyDefinition 描述符对象
+    // const sharedPropertyDefinition = {
+    //   enumerable: true,
+    //   configurable: true,
+    //   get: noop,
+    //   set: noop
+    // }
     sharedPropertyDefinition.get = shouldCache
-      ? createComputedGetter(key)
+      ? createComputedGetter(key) // 返回一个包装函数
       : userDef
+    // ! 从设计上来看默认情况下，计算属性不设置 setter
     sharedPropertyDefinition.set = noop
   } else {
     sharedPropertyDefinition.get = userDef.get
       ? shouldCache && userDef.cache !== false
-        ? createComputedGetter(key)
+        ? createComputedGetter(key) // 返回一个包装函数
         : userDef.get
       : noop
+    // 当用户设置了计算属性的 setter 时，将使用该 setter
     sharedPropertyDefinition.set = userDef.set
       ? userDef.set
       : noop
   }
   if (process.env.NODE_ENV !== 'production' &&
       sharedPropertyDefinition.set === noop) {
+    // 当尝试修改计算属性时，将报错，因为从设计的角度来看，默认情况下，计算属性没有 setter
     sharedPropertyDefinition.set = function () {
       warn(
         `Computed property "${key}" was assigned to but it has no setter.`,
@@ -250,6 +267,13 @@ export function defineComputed (
       )
     }
   }
+
+  /** // ! 计算属性的实现的核心：定义一个特定的对象属性描述符
+   * 1. 经由 Object.defineProperty 中设置 setter 与 getter 来实现 computed 中的
+   * `依赖型` 响应式
+   * 2. 与 data 选项中键值的区别是，计算属性的 getter 完全由 computed 的键值函数提
+   * 供。
+   */
   Object.defineProperty(target, key, sharedPropertyDefinition)
 }
 
